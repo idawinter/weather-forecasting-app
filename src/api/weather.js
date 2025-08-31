@@ -43,6 +43,36 @@ export async function getForecastByCity(city, units = "metric") {
   return summarizeToFiveDays(data);
 }
 
+// Get current weather by coordinates
+export async function getCurrentByCoords(lat, lon, units = "metric") {
+  const key = import.meta.env.VITE_OWM_KEY;
+  if (!key) throw new Error("Missing OpenWeatherMap API key.");
+  const url = new URL("https://api.openweathermap.org/data/2.5/weather");
+  url.searchParams.set("lat", lat);
+  url.searchParams.set("lon", lon);
+  url.searchParams.set("units", units);
+  url.searchParams.set("appid", key);
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || res.statusText || "Failed to fetch weather.");
+  return data;
+}
+
+// Get 5-day forecast by coordinates
+export async function getForecastByCoords(lat, lon, units = "metric") {
+  const key = import.meta.env.VITE_OWM_KEY;
+  if (!key) throw new Error("Missing OpenWeatherMap API key.");
+  const url = new URL("https://api.openweathermap.org/data/2.5/forecast");
+  url.searchParams.set("lat", lat);
+  url.searchParams.set("lon", lon);
+  url.searchParams.set("units", units);
+  url.searchParams.set("appid", key);
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || res.statusText || "Failed to fetch forecast.");
+  return summarizeToFiveDays(data);
+}
+
 function summarizeToFiveDays(data) {
   const tzOffsetSec = data.city?.timezone ?? 0; // seconds
   const byDate = new Map();

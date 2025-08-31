@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCurrentByCity, getForecastByCity } from "./api/weather";
+import { getCurrentByCity, getForecastByCity, getCurrentByCoords, getForecastByCoords } from "./api/weather";
 
 export default function App() {
   const [units, setUnits] = useState("metric");
@@ -47,6 +47,51 @@ export default function App() {
     }
   }
 
+  async function fetchByLocation(u = units) {
+    if (!("geolocation" in navigator)) {
+      setError("Geolocation is not supported on this device.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const pos = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true, timeout: 10000, maximumAge: 0,
+        })
+      );
+      const { latitude: lat, longitude: lon } = pos.coords;
+  
+      const [curr, days] = await Promise.all([
+        getCurrentByCoords(lat, lon, u),
+        getForecastByCoords(lat, lon, u),
+      ]);
+  
+      setCurrent({
+        name: `${curr.name}, ${curr.sys?.country ?? ""}`,
+        temp: Math.round(curr.main.temp),
+        feels: Math.round(curr.main.feels_like),
+        humidity: curr.main.humidity,
+        wind: Math.round(curr.wind.speed),
+        desc: curr.weather?.[0]?.description ?? "",
+        icon: curr.weather?.[0]?.icon ?? "",
+      });
+      setForecast(days);
+      setLastCity(curr.name || "My Location");
+    } catch (e) {
+      const msg = String(e?.message || e);
+      if (msg.toLowerCase().includes("permission")) {
+        setError("Location permission was denied.");
+      } else if (msg.toLowerCase().includes("timeout")) {
+        setError("Finding your location took too long. Try again.");
+      } else {
+        setError(msg || "Failed to get your location.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }  
+
   function onSubmit(e) {
     e.preventDefault();
     const trimmed = cityInput.trim();
@@ -76,19 +121,29 @@ export default function App() {
       </header>
 
       <main className="content">
-        <form className="search" onSubmit={onSubmit}>
-          <input
-            className="input"
-            type="text"
-            placeholder="Search city (e.g., Victoria)"
-            aria-label="City"
-            value={cityInput}
-            onChange={(e) => setCityInput(e.target.value)}
-          />
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Loading..." : "Get weather"}
-          </button>
-        </form>
+      <form className="search" onSubmit={onSubmit}>
+        <input
+          className="input"
+          type="text"
+          placeholder="Search city (e.g., Victoria)"
+          aria-label="City"
+          value={cityInput}
+          onChange={(e) => setCityInput(e.target.value)}
+        />
+        <button className="btn" type="submit" disabled={loading}>
+          {loading ? "Loading..." : "Get weather"}
+        </button>
+
+        <button
+          className="btn"
+          type="button"
+          onClick={() => fetchByLocation()}
+          disabled={loading}
+          style={{ marginLeft: "8px" }}
+        >
+          Use my location
+        </button>
+      </form>
 
         {error && (
           <section className="current" role="alert">
