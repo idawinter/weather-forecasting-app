@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCurrentByCity } from "./api/weather";
+import { getCurrentByCity, getForecastByCity } from "./api/weather";
 
 export default function App() {
   const [units, setUnits] = useState("metric");
@@ -8,24 +8,32 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [current, setCurrent] = useState(null);
+  const [forecast, setForecast] = useState([]);
 
   async function fetchCityWeather(city, u = units) {
     setLoading(true);
     setError("");
     try {
-      const data = await getCurrentByCity(city, u);
+      const [curr, days] = await Promise.all([
+        getCurrentByCity(city, u),
+        getForecastByCity(city, u),
+      ]);
+
       setCurrent({
-        name: `${data.name}, ${data.sys?.country ?? ""}`,
-        temp: Math.round(data.main.temp),
-        feels: Math.round(data.main.feels_like),
-        humidity: data.main.humidity,
-        wind: Math.round(data.wind.speed),
-        desc: data.weather?.[0]?.description ?? "",
-        icon: data.weather?.[0]?.icon ?? "",
+        name: `${curr.name}, ${curr.sys?.country ?? ""}`,
+        temp: Math.round(curr.main.temp),
+        feels: Math.round(curr.main.feels_like),
+        humidity: curr.main.humidity,
+        wind: Math.round(curr.wind.speed),
+        desc: curr.weather?.[0]?.description ?? "",
+        icon: curr.weather?.[0]?.icon ?? "",
       });
+
+      setForecast(days);
       setLastCity(city);
     } catch (e) {
       setCurrent(null);
+      setForecast([]);
       const msg = String(e?.message || e || "Something went wrong.");
       if (msg.toLowerCase().includes("city not found")) {
         setError("I couldn’t find that city. Try a different spelling.");
@@ -61,6 +69,7 @@ export default function App() {
         <button
           className="unit-toggle"
           onClick={() => setUnits(units === "metric" ? "imperial" : "metric")}
+          aria-label="Toggle temperature units"
         >
           {units === "metric" ? "°C → °F" : "°F → °C"}
         </button>
@@ -72,6 +81,7 @@ export default function App() {
             className="input"
             type="text"
             placeholder="Search city (e.g., Victoria)"
+            aria-label="City"
             value={cityInput}
             onChange={(e) => setCityInput(e.target.value)}
           />
@@ -111,18 +121,11 @@ export default function App() {
                 <div style={{ fontSize: "1.3rem", fontWeight: 700 }}>
                   {current.name}
                 </div>
-                <div
-                  style={{
-                    fontSize: "2.2rem",
-                    fontWeight: 800,
-                    lineHeight: 1.1,
-                  }}
-                >
+                <div style={{ fontSize: "2.2rem", fontWeight: 800, lineHeight: 1.1 }}>
                   {current.temp}°{units === "metric" ? "C" : "F"}
                 </div>
                 <div style={{ color: "var(--muted)" }}>
-                  {current.desc} • Feels like {current.feels}° • Humidity{" "}
-                  {current.humidity}% • Wind {current.wind}
+                  {current.desc} • Feels like {current.feels}° • Humidity {current.humidity}% • Wind {current.wind}
                   {units === "metric" ? " m/s" : " mph"}
                 </div>
               </div>
@@ -133,11 +136,29 @@ export default function App() {
         <section className="forecast">
           <h2>5-Day Forecast</h2>
           <div className="forecast-grid">
-            {[...Array(5)].map((_, i) => (
+            {forecast.length === 0 &&
+              [...Array(5)].map((_, i) => (
+                <div className="card" key={i}>
+                  <div className="day">Day {i + 1}</div>
+                  <div className="temp">--°</div>
+                  <div className="desc">—</div>
+                </div>
+              ))}
+
+            {forecast.map((d, i) => (
               <div className="card" key={i}>
-                <div className="day">Day {i + 1}</div>
-                <div className="temp">--°</div>
-                <div className="desc">—</div>
+                <div className="day">{d.weekday}</div>
+                <img
+                  src={`https://openweathermap.org/img/wn/${d.icon}.png`}
+                  alt={d.desc}
+                  width="48"
+                  height="48"
+                  style={{ display: "block", margin: "6px auto" }}
+                />
+                <div className="temp">
+                  {d.max}° / <span style={{ color: "var(--muted)" }}>{d.min}°</span>
+                </div>
+                <div className="desc" title={d.desc}>{d.desc}</div>
               </div>
             ))}
           </div>
