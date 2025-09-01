@@ -151,76 +151,104 @@ export default function App() {
           </section>
         )}
 
-        <section className="current">
-          {!current && !error && (
-            <p className="placeholder">Current weather will appear here.</p>
-          )}
-
-          {current && (
-            <div
-              className="current-wrap"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "auto 1fr",
-                gap: "14px",
-                alignItems: "center",
-              }}
-            >
-              <img
-                src={`https://openweathermap.org/img/wn/${current.icon}@2x.png`}
-                alt={current.desc}
-                width="80"
-                height="80"
-              />
-              <div>
-                <div style={{ fontSize: "1.3rem", fontWeight: 700 }}>
-                  {current.name}
-                </div>
-                <div style={{ fontSize: "2.2rem", fontWeight: 800, lineHeight: 1.1 }}>
-                  {current.temp}°{units === "metric" ? "C" : "F"}
-                </div>
-                <div style={{ color: "var(--muted)" }}>
-                  {current.desc} • Feels like {current.feels}° • Humidity {current.humidity}% • Wind {current.wind}
-                  {units === "metric" ? " m/s" : " mph"}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="forecast">
-          <h2>5-Day Forecast</h2>
-          <div className="forecast-grid">
-            {forecast.length === 0 &&
-              [...Array(5)].map((_, i) => (
-                <div className="card" key={i}>
-                  <div className="day">Day {i + 1}</div>
-                  <div className="temp">--°</div>
-                  <div className="desc">—</div>
-                </div>
-              ))}
-
-            {forecast.map((d, i) => (
-              <div className="card" key={i}>
-                <div className="day">{d.weekday}</div>
-                <img
-                  src={`https://openweathermap.org/img/wn/${d.icon}.png`}
-                  alt={d.desc}
-                  width="48"
-                  height="48"
-                  style={{ display: "block", margin: "6px auto" }}
-                />
-                <div className="temp">
-                  {d.max}° / <span style={{ color: "var(--muted)" }}>{d.min}°</span>
-                </div>
-                <div className="desc" title={d.desc}>{d.desc}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      <footer className="footer">Built with React + OpenWeatherMap</footer>
+{loading ? (
+  <section className="current">
+    {/* Loading skeleton for CURRENT */}
+    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 14, alignItems: "center" }}>
+      <div className="skeleton" style={{ width: 80, height: 80, borderRadius: 12 }} />
+      <div>
+        <div className="skel-line" style={{ width: "60%" }} />
+        <div className="skel-line" style={{ width: "40%", height: 22 }} />
+        <div className="skel-line" style={{ width: "80%" }} />
+      </div>
     </div>
+  </section>
+) : (
+  <section className="current">
+    {!current && !error && (
+      <p className="placeholder">Current weather will appear here.</p>
+    )}
+    {current && (
+      <div
+        className="current-wrap fade-in"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          gap: "14px",
+          alignItems: "center",
+        }}
+      >
+        <img
+          src={`https://openweathermap.org/img/wn/${current.icon}@2x.png`}
+          alt={current.desc}
+          width="80"
+          height="80"
+        />
+        <div>
+          <div style={{ fontSize: "1.3rem", fontWeight: 700 }}>
+            {current.name}
+          </div>
+          <div style={{ fontSize: "2.2rem", fontWeight: 800, lineHeight: 1.1 }}>
+            {current.temp}°{units === "metric" ? "C" : "F"}
+          </div>
+          <div style={{ color: "var(--muted)" }}>
+            {current.desc} • Feels like {current.feels}° • Humidity {current.humidity}% • Wind {current.wind}
+            {units === "metric" ? " m/s" : " mph"}
+          </div>
+        </div>
+      </div>
+    )}
+  </section>
+)}
+
+<section className="forecast">
+  <h2>5-Day Forecast</h2>
+  <div className="forecast-grid">
+    {loading &&
+      [...Array(5)].map((_, i) => (
+        <div className="card" key={`sk-${i}`}>
+          <div
+            className="skeleton"
+            style={{ width: 48, height: 48, margin: "6px auto", borderRadius: 10 }}
+          />
+          <div className="skel-line" style={{ width: "50%", margin: "6px auto" }} />
+          <div className="skel-line" style={{ width: "70%", margin: "6px auto" }} />
+        </div>
+      ))
+    }
+
+    {!loading && forecast.length === 0 &&
+      [...Array(5)].map((_, i) => (
+        <div className="card" key={i}>
+          <div className="day">Day {i + 1}</div>
+          <div className="temp">--°</div>
+          <div className="desc">—</div>
+        </div>
+      ))
+    }
+
+    {!loading && forecast.map((d, i) => (
+      <div className="card fade-in" key={i}>
+        <div className="day">{d.weekday}</div>
+        <img
+          src={`https://openweathermap.org/img/wn/${d.icon}.png`}
+          alt={d.desc}
+          width="48"
+          height="48"
+          style={{ display: "block", margin: "6px auto" }}
+        />
+        <div className="temp">
+          {d.max}° / <span style={{ color: "var(--muted)" }}>{d.min}°</span>
+        </div>
+        <div className="desc" title={d.desc}>{d.desc}</div>
+      </div>
+    ))}
+  </div>
+</section>
+
+</main>
+
+<footer className="footer">Built with React + OpenWeatherMap</footer>
+</div>
   );
 }
