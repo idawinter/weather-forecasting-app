@@ -1,5 +1,5 @@
 # Weather Forecasting App
 
-**Live:** https://<your-netlify-site>.netlify.app  
+**Live:** https://glowing-queijadas-4805c8.netlify.app
 **Repo:** https://github.com/idawinter/weather-forecasting-app
 
